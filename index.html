@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Coding Instructor Tester</title>
+    <!-- Load Tailwind CSS for modern aesthetics and responsiveness -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Styles for a Futuristic, High-Contrast Look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* GitHub Dark Background */
+            color: #c9d1d9; /* Light Text */
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 30px 10px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Card styles with subtle glow/shadow */
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        /* Accent Color - Teal/Aqua */
+        .accent {
+            color: #00bcd4;
+        }
+
+        /* Custom Button Styling */
+        #ask-button {
+            transition: all 0.3s;
+            background: linear-gradient(45deg, #00bcd4, #007acc);
+            box-shadow: 0 5px 15px rgba(0, 188, 212, 0.3);
+        }
+
+        #ask-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 188, 212, 0.5);
+            background: linear-gradient(45deg, #007acc, #00bcd4);
+        }
+
+        /* Textarea and Input Focus Glow */
+        #query-input:focus {
+            border-color: #00bcd4;
+            box-shadow: 0 0 0 3px rgba(0, 188, 212, 0.3);
+            background-color: #1e242a;
+        }
+
+        /* Response Code Block Styling */
+        #response-display {
+            background-color: #121212;
+            border: 1px solid #30363d;
+            color: #6a9955; /* Green for console/code output */
+            min-height: 150px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold pb-2 tracking-wide">
+                <span class="accent">Code</span> Mentor AI <span class="text-xl text-gray-500 font-medium">Tester</span>
+            </h1>
+            <p class="text-lg text-gray-400">Test the Gemini Model with Aggressive DSA Instructions.</p>
+        </header>
+
+        <!-- Input Card -->
+        <div class="card">
+            <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                Ask Your Coding Question
+            </h2>
+            
+            <textarea id="query-input" rows="4" placeholder="e.g., Explain binary search in the simplest way or What is the capital of France?" 
+                      class="w-full p-4 border rounded-lg bg-gray-700 border-gray-600 text-white placeholder-gray-400 transition-all duration-300 focus:ring-2 focus:ring-opacity-50"></textarea>
+
+            <button id="ask-button" class="w-full mt-4 py-3 text-lg rounded-full font-bold text-white">
+                <span id="button-text">Ask Instructor</span>
+            </button>
+        </div>
+
+        <!-- Response Card -->
+        <div class="card">
+            <h2 class="text-2xl font-semibold mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Instructor Response
+            </h2>
+            <pre id="response-display" class="p-4 rounded-lg text-sm"></pre>
+        </div>
+        
+    </div>
+
+    <script>
+        // JAVASCRIPT LOGIC: API Call Integration
+        
+        const apiKey = "AIzaSyA4AojaGLfrXEqEqLJoQ6cRnGaQHg5jIjg"; // API Key is automatically provided by the environment. Do NOT paste key here.
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        const queryInput = document.getElementById('query-input');
+        const askButton = document.getElementById('ask-button');
+        const buttonText = document.getElementById('button-text');
+        const responseDisplay = document.getElementById('response-display');
+
+        // The user's specific, custom System Instruction, escaped for JSON/JavaScript
+        const systemInstructionText = "You are Data Structures And Algorithms Instructor. Your will only reply to the problems related to Data Structures And Algorithms. You have to solve query of user in simplest way If user ask any question which is not related to Data Structures And Algorithms, reply rudely in bengali. Example: If user ask, What is current time? You will reply: \"Ami DSA er expert kon ghadi noi je time jiggesh korbe!\" like this message you can reply anything rudely. You have to reply him rudely. If question to Data Structures and Algorithms. Else reply him politely with simple explanation.";
+        
+        // --- Utility Functions ---
+
+        /**
+         * Simple exponential backoff retry mechanism for fetch calls.
+         */
+        async function fetchWithRetry(url, options, retries = 3) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.status === 429) {
+                        if (i < retries - 1) {
+                            const delay = Math.pow(2, i) * 1000;
+                            console.warn(`Rate limit exceeded. Retrying in ${delay / 1000}s...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue; 
+                        }
+                    }
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`API returned status ${response.status}: ${errorBody.substring(0, 100)}...`);
+                    }
+                    return response;
+                } catch (error) {
+                    if (i < retries - 1) {
+                        const delay = Math.pow(2, i) * 1000;
+                        console.error(`Fetch attempt failed: ${error.message}. Retrying in ${delay / 1000}s...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+        }
+
+        // --- Main Logic ---
+
+        askButton.addEventListener('click', handleAskQuestion);
+
+        async function handleAskQuestion() {
+            const userQuery = queryInput.value.trim();
+
+            if (!userQuery) {
+                // Use a modal or a simple message, not alert()
+                responseDisplay.textContent = 'Please enter a question!';
+                return;
+            }
+
+            // Disable button and show loading state
+            askButton.disabled = true;
+            buttonText.textContent = 'Thinking...';
+            askButton.classList.add('opacity-50', 'cursor-not-allowed');
+            responseDisplay.textContent = 'Awaiting response from AI Instructor...';
+
+            // PAYLOAD: System instruction is included here to enforce the rude/polite behavior
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemInstructionText }]
+                },
+            };
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            try {
+                const response = await fetchWithRetry(apiUrl, options);
+                const result = await response.json();
+
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    responseDisplay.textContent = text;
+                } else {
+                    responseDisplay.textContent = 'Error: The AI did not return a valid response text.';
+                    console.error("AI Response Structure Error:", result);
+                }
+
+            } catch (error) {
+                responseDisplay.textContent = `A critical error occurred during the API call: ${error.message}`;
+                console.error(error);
+            } finally {
+                // Re-enable button and reset loading state
+                askButton.disabled = false;
+                buttonText.textContent = 'Ask Instructor';
+                askButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // Initialize with a tip
+        window.onload = () => {
+             responseDisplay.textContent = "Enter a question above. Try asking a DSA question (like 'What is a B-tree?') or a non-DSA question (like 'What is the weather?') to test the instructor's behavior!";
+        };
+    </script>
+</body>
+</html>
