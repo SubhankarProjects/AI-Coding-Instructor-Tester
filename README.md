@@ -16,17 +16,17 @@ Non-DSA Query: Response is rude and dismissive (in Bengali).
 The AI is programmed with a strict system instruction to enforce this conditional persona. This project serves as a clear demonstration of persona fidelity within the Gemini model.
 
 🛠️ Testing Environments
-The project provides two methods for testing the instructor:
+The project provides two methods for testing the instructor, with file names matching your repository structure:
 
 1. Web Frontend (index.html)
 Interface: Sleek, high-contrast dark-mode UI built with HTML and Tailwind CSS.
 
 Function: Quick and visual testing of single-turn queries.
 
-2. Node.js CLI Chat (chat.js)
+2. Node.js CLI Chat (index.js / LLM.js)
 Interface: Command Line Interface.
 
-Function: Handles multi-turn conversations by correctly passing the entire history to the API, allowing for deeper testing of context maintenance.
+Function: Handles multi-turn conversations by correctly passing the entire history to the API, allowing for deeper testing of context maintenance. The main execution script is index.js.
 
 🚀 Setup & Run
 Prerequisites
@@ -39,7 +39,7 @@ Clone the repo:
 
 Install dependencies:
 
-Set API Key (Required for chat.js):
+Set API Key (Required for index.js):
 
 (Note: For index.html, you must paste the key directly into the JavaScript for quick testing).
 
